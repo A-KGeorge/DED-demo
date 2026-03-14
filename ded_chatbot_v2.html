@@ -1,0 +1,1178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dynamic Epistemic Decay</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <style>
+      :root {
+        --color-background-primary: #ffffff;
+        --color-background-secondary: #f9f9fa;
+        --color-background-tertiary: #ededed;
+        --color-background-info: #eaf3fc;
+        --color-background-warning: #fff4e6;
+        --color-border-primary: #caced3;
+        --color-border-secondary: #d1d5da;
+        --color-border-tertiary: #e1e4e8;
+        --color-text-primary: #1f2328;
+        --color-text-secondary: #586069;
+        --color-text-tertiary: #6a737d;
+        --color-text-info: #0366d6;
+        --color-text-warning: #b08800;
+        --border-radius-md: 6px;
+        --border-radius-lg: 12px;
+        --font-sans:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+          sans-serif;
+        --font-mono:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      }
+      body {
+        background: #eaeaee;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        font-family: var(--font-sans);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      .wrap {
+        display: flex;
+        width: 100%;
+        max-width: 960px;
+        height: 80vh;
+        max-height: 720px;
+        background: var(--color-background-primary);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+        border: 0.5px solid var(--color-border-tertiary);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        font-family: var(--font-sans);
+      }
+      .chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        background: var(--color-background-primary);
+      }
+      .chat-hdr {
+        padding: 10px 14px;
+        border-bottom: 0.5px solid var(--color-border-tertiary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .api-key-inp {
+        font-size: 11px;
+        padding: 4px 8px;
+        border: 0.5px solid var(--color-border-secondary);
+        border-radius: var(--border-radius-md);
+        font-family: var(--font-mono);
+        width: 150px;
+        outline: none;
+      }
+      .ded-pill {
+        background: #d85a30;
+        color: #fff;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 2px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+      .hdr-sub {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        flex: 1;
+      }
+      .turn-tag {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--color-text-tertiary);
+        background: var(--color-background-secondary);
+        padding: 3px 8px;
+        border-radius: var(--border-radius-md);
+        border: 0.5px solid var(--color-border-tertiary);
+      }
+      .msgs {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .msg {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-width: 90%;
+      }
+      .msg.u {
+        align-self: flex-end;
+      }
+      .msg.a {
+        align-self: flex-start;
+      }
+      .mlabel {
+        font-size: 10px;
+        color: var(--color-text-tertiary);
+      }
+      .msg.u .mlabel {
+        text-align: right;
+      }
+      .bubble {
+        padding: 9px 13px;
+        border-radius: var(--border-radius-lg);
+        font-size: 13px;
+        line-height: 1.6;
+        border: 0.5px solid var(--color-border-tertiary);
+      }
+      .msg.u .bubble {
+        background: var(--color-background-info);
+      }
+      .msg.a .bubble {
+        background: var(--color-background-secondary);
+      }
+      .inp-row {
+        padding: 10px 12px;
+        border-top: 0.5px solid var(--color-border-tertiary);
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .cinp {
+        flex: 1;
+        font-size: 13px;
+        padding: 7px 11px;
+        border: 0.5px solid var(--color-border-secondary);
+        border-radius: var(--border-radius-md);
+        background: var(--color-background-secondary);
+        color: var(--color-text-primary);
+        font-family: var(--font-sans);
+        outline: none;
+      }
+      .cinp:focus {
+        border-color: var(--color-border-primary);
+      }
+      .sbtn {
+        padding: 7px 14px;
+        background: #d85a30;
+        color: #fff;
+        border: none;
+        border-radius: var(--border-radius-md);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        font-family: var(--font-sans);
+      }
+      .sbtn:hover {
+        opacity: 0.85;
+      }
+      .sbtn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .fpanel {
+        width: 290px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--color-background-secondary);
+        border-left: 0.5px solid var(--color-border-tertiary);
+      }
+      .fhdr {
+        padding: 10px 12px;
+        border-bottom: 0.5px solid var(--color-border-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+      .ftitle {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--color-text-tertiary);
+        letter-spacing: 1px;
+      }
+      .ftools {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .factive {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #d85a30;
+      }
+      .ibtn {
+        font-size: 11px;
+        padding: 2px 8px;
+        border: 0.5px solid var(--color-border-secondary);
+        border-radius: var(--border-radius-md);
+        background: var(--color-background-primary);
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        font-family: var(--font-mono);
+      }
+      .ibtn:hover {
+        background: var(--color-background-tertiary);
+      }
+      .lslider {
+        padding: 8px 12px;
+        border-bottom: 0.5px solid var(--color-border-tertiary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .llab {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--color-text-tertiary);
+        letter-spacing: 0.5px;
+        width: 14px;
+      }
+      .lval {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #d85a30;
+        width: 30px;
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .flist {
+        flex: 1;
+        overflow-y: auto;
+        padding: 7px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .fcard {
+        background: var(--color-background-primary);
+        border-radius: var(--border-radius-md);
+        border: 0.5px solid var(--color-border-tertiary);
+        padding: 7px 9px;
+        transition: opacity 0.4s;
+      }
+      .fcard.dead {
+        opacity: 0.28;
+      }
+      .ftop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2px;
+        gap: 4px;
+      }
+      .fsubj {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+      .fbadges {
+        display: flex;
+        gap: 3px;
+        flex-shrink: 0;
+        align-items: center;
+      }
+      .bdg {
+        font-size: 9px;
+        letter-spacing: 0.3px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-weight: 500;
+        text-transform: uppercase;
+      }
+      .bdg-u {
+        background: var(--color-background-info);
+        color: var(--color-text-info);
+      }
+      .bdg-m {
+        background: var(--color-background-warning);
+        color: var(--color-text-warning);
+      }
+      .delbtn {
+        font-size: 10px;
+        color: var(--color-text-tertiary);
+        cursor: pointer;
+        padding: 0 3px;
+        line-height: 1;
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        font-family: var(--font-mono);
+      }
+      .delbtn:hover {
+        color: #e24b4a;
+      }
+      .fval {
+        font-size: 11px;
+        color: var(--color-text-secondary);
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-style: italic;
+      }
+      .cbar {
+        height: 3px;
+        background: var(--color-background-tertiary);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 3px;
+      }
+      .cfill {
+        height: 100%;
+        border-radius: 2px;
+        transition:
+          width 0.5s,
+          background 0.5s;
+      }
+      .ffoot {
+        display: flex;
+        justify-content: space-between;
+      }
+      .fturn {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--color-text-tertiary);
+      }
+      .fpct {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 500;
+      }
+      .fempty {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 6px;
+        padding: 20px;
+        text-align: center;
+      }
+      .fempty-txt {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--color-text-tertiary);
+        line-height: 1.8;
+      }
+      .pbar {
+        padding: 8px 12px;
+        border-top: 0.5px solid var(--color-border-tertiary);
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .pm {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .pm-l {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--color-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .pm-v {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #d85a30;
+        font-weight: 500;
+      }
+      .dots {
+        display: flex;
+        gap: 3px;
+        align-items: center;
+        padding: 2px 0;
+      }
+      .dots span {
+        width: 4px;
+        height: 4px;
+        background: var(--color-text-tertiary);
+        border-radius: 50%;
+        animation: td 1.2s infinite ease-in-out;
+      }
+      .dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes td {
+        0%,
+        80%,
+        100% {
+          opacity: 0.2;
+          transform: scale(0.8);
+        }
+        40% {
+          opacity: 0.8;
+          transform: scale(1);
+        }
+      }
+      .rl-banner {
+        display: none;
+        background: var(--color-background-warning);
+        color: var(--color-text-warning);
+        padding: 8px 14px;
+        font-size: 11px;
+        border-bottom: 0.5px solid var(--color-border-tertiary);
+        font-family: var(--font-mono);
+        text-align: center;
+      }
+      .rl-banner.active {
+        display: block;
+      }
+
+      .fpanel-toggle {
+        display: none;
+      }
+
+      /* Responsive Layout for Tablet & Mobile */
+      @media (max-width: 768px) {
+        .fpanel-toggle {
+          display: inline;
+        }
+        .fhdr {
+          cursor: pointer;
+          user-select: none;
+        }
+        .fpanel.collapsed {
+          flex: 0 0 auto !important;
+        }
+        .fpanel.collapsed .lslider,
+        .fpanel.collapsed .flist,
+        .fpanel.collapsed .pbar,
+        .fpanel.collapsed .fpanel-info {
+          display: none !important;
+        }
+        .wrap {
+          flex-direction: column;
+          height: 95vh;
+          max-height: none;
+        }
+        .chat {
+          flex: 1;
+          min-height: 0;
+        }
+        .fpanel {
+          flex: 0 0 45%;
+          width: 100%;
+          min-height: 0;
+          border-left: none;
+          border-top: 2px solid var(--color-border-tertiary);
+        }
+        .api-key-inp {
+          width: 120px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 0;
+        }
+        .wrap {
+          height: 100vh;
+          border-radius: 0;
+          border: none;
+        }
+        .chat-hdr {
+          flex-wrap: wrap;
+        }
+        .hdr-sub {
+          font-size: 11px;
+        }
+        .api-key-inp {
+          order: 4;
+          width: 100%;
+          margin-top: 8px;
+        }
+        .turn-tag {
+          margin-left: auto;
+        }
+        .pbar {
+          gap: 4px;
+          justify-content: space-between;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="chat">
+        <div class="chat-hdr">
+          <span class="ded-pill">DED</span>
+          <span class="hdr-sub">Dynamic Epistemic Decay</span>
+          <input
+            type="password"
+            id="gemini_key"
+            class="api-key-inp"
+            placeholder="Groq API Key..."
+            title="Get a free key from console.groq.com/keys"
+          />
+          <span class="turn-tag">turn <span id="tnum">0</span></span>
+        </div>
+        <div class="rl-banner" id="rl_banner"></div>
+        <div class="msgs" id="msgs">
+          <div class="msg a">
+            <div class="mlabel">DED Agent</div>
+            <div class="bubble">
+              Hello — I track facts with exponential decay (λ=0.2 by default).
+              Try stating <code>x = 5</code> or <code>my name is John</code>.
+              Use the λ slider to adjust decay speed. Delete facts manually with
+              ×. Export the fact store as JSON with the export button.
+            </div>
+          </div>
+        </div>
+        <div class="inp-row">
+          <input
+            class="cinp"
+            id="cinp"
+            placeholder='Try "x = 5" or "the deadline is Friday"...'
+          />
+          <button class="sbtn" id="sbtn" onclick="go()">Send</button>
+        </div>
+      </div>
+
+      <div class="fpanel" id="fpanel">
+        <div class="fhdr" onclick="togglePanel()">
+          <span class="ftitle"
+            ><span class="fpanel-toggle" id="fpanel-toggle">▼ </span>//
+            fact_store</span
+          >
+          <div class="ftools" onclick="event.stopPropagation()">
+            <span class="factive" id="factive">0 active</span>
+            <button class="ibtn" onclick="exportFacts()">export</button>
+            <button class="ibtn" onclick="clearDead()">clear dead</button>
+          </div>
+        </div>
+        <div class="lslider">
+          <span class="llab">λ</span>
+          <input
+            type="range"
+            min="0.1"
+            max="2.0"
+            step="0.1"
+            value="0.2"
+            id="lslide"
+            style="flex: 1"
+            oninput="updateL(this.value)"
+          />
+          <span class="lval" id="lval">0.2</span>
+        </div>
+        <div class="lslider">
+          <span class="llab" style="width: auto; margin-right: 5px">cw</span>
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="1"
+            value="3"
+            id="cwslide"
+            style="flex: 1"
+            oninput="updateContextSize(this.value)"
+          />
+          <span class="lval" id="cwval">3</span>
+        </div>
+        <div
+          class="fpanel-info"
+          style="
+            padding: 8px 12px;
+            border-bottom: 0.5px solid var(--color-border-tertiary);
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--color-text-tertiary);
+            line-height: 1.4;
+            background: var(--color-background-primary);
+          "
+        >
+          <div
+            style="
+              margin-bottom: 4px;
+              color: var(--color-text-secondary);
+              line-height: 1.3;
+            "
+          >
+            * λ slider applies to GENERAL facts. Fixed category rates:
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span>MATH / HISTORICAL</span><span>0.0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span>PHYSICAL_LAW</span><span>0.0001</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span>GEOGRAPHIC_FACT</span><span>0.0002</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span>LEADERSHIP</span><span>0.002</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span>POLITICAL</span><span>0.01</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span>CURRENT_EVENT</span><span>0.05</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span>BREAKING_NEWS</span><span>0.9</span>
+          </div>
+        </div>
+        <div class="flist" id="flist">
+          <div class="fempty">
+            <div class="fempty-txt">
+              No facts yet.<br />State something to begin.
+            </div>
+          </div>
+        </div>
+        <div class="pbar">
+          <div class="pm">
+            <div class="pm-l">λ</div>
+            <div class="pm-v" id="plam">0.20</div>
+          </div>
+          <div class="pm">
+            <div class="pm-l">floor</div>
+            <div class="pm-v">5%</div>
+          </div>
+          <div class="pm">
+            <div class="pm-l">dead@</div>
+            <div class="pm-v">12%</div>
+          </div>
+          <div class="pm">
+            <div class="pm-l">facts</div>
+            <div class="pm-v" id="ftotal">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const FLOOR = 0.05,
+        DEAD = 0.12;
+      let λ = 0.2,
+        contextWindowSize = 3,
+        facts = [],
+        turn = 0,
+        loading = false,
+        hist = [],
+        expanded = new Set();
+
+      const CATEGORY_RATES = {
+        MATHEMATICAL_TRUTH: 0.0,
+        HISTORICAL_SEAL: 0.0,
+        PHYSICAL_LAW: 0.0001,
+        GEOGRAPHIC_FACT: 0.0002,
+        INSTITUTIONAL_LEADERSHIP: 0.002,
+        POLITICAL_POSITION: 0.01,
+        CURRENT_EVENT: 0.05,
+        BREAKING_NEWS: 0.9,
+      };
+
+      function dc(init, el, cat) {
+        const rate =
+          CATEGORY_RATES[cat] !== undefined ? CATEGORY_RATES[cat] : λ;
+        return Math.max(FLOOR, init * Math.exp(-rate * el));
+      }
+
+      function updateL(v) {
+        λ = parseFloat(v);
+        document.getElementById("lval").textContent = λ.toFixed(1);
+        document.getElementById("plam").textContent = λ.toFixed(2);
+        render();
+      }
+
+      function updateContextSize(v) {
+        contextWindowSize = parseInt(v, 10);
+        document.getElementById("cwval").textContent = contextWindowSize;
+      }
+
+      function extract(txt, by, t) {
+        const out = [];
+        const sents = txt
+          .split(/[.!?\n]+/)
+          .map((s) => s.trim())
+          .filter((s) => s.length > 2 && s.length < 200);
+        for (const s of sents) {
+          const eq = s.match(/^([a-zA-Z_][\w\s]{0,25}?)\s*=\s*(.{2,80})$/);
+          if (eq) {
+            out.push({
+              subj: eq[1].trim(),
+              val: eq[2].trim().replace(/[.,;]$/, ""),
+              category: "GENERAL",
+            });
+            continue;
+          }
+          const isA = s.match(
+            /^((?:the\s+|my\s+|our\s+|your\s+)?[A-Za-z][\w\s]{1,30}?)\s+(?:is|are|was|were|equals?)\s+(.{2,80})$/i,
+          );
+          if (
+            isA &&
+            !/^(it|this|that|there|here|i|we|he|she|they)\b/i.test(isA[1])
+          )
+            out.push({
+              subj: isA[1].trim(),
+              val: isA[2].trim().replace(/[.,;]$/, ""),
+              category: "GENERAL",
+            });
+        }
+        const init = by === "user" ? 1.0 : 0.65;
+        return out.slice(0, 5).map((f) => ({
+          id: Math.random().toString(36).substr(2, 8),
+          subj: f.subj,
+          val: f.val,
+          category: f.category,
+          by,
+          init,
+          turn: t,
+        }));
+      }
+
+      function ccol(c) {
+        if (c <= DEAD) return "var(--color-text-tertiary)";
+        if (c > 0.6) return "#1D9E75";
+        if (c > 0.3) return "#BA7517";
+        return "#E24B4A";
+      }
+
+      function toggleFact(id) {
+        if (expanded.has(id)) expanded.delete(id);
+        else expanded.add(id);
+        render();
+      }
+
+      function deleteFact(id) {
+        facts = facts.filter((f) => f.id !== id);
+        render();
+      }
+      function clearDead() {
+        facts = facts.filter(
+          (f) => dc(f.init, turn - f.turn, f.category) > DEAD,
+        );
+        render();
+      }
+
+      function togglePanel() {
+        if (window.innerWidth <= 768) {
+          const fp = document.getElementById("fpanel");
+          fp.classList.toggle("collapsed");
+          const t = document.getElementById("fpanel-toggle");
+          t.textContent = fp.classList.contains("collapsed") ? "▲ " : "▼ ";
+        }
+      }
+
+      function exportFacts() {
+        const out = facts.map((f) => ({
+          ...f,
+          current_confidence: parseFloat(
+            dc(f.init, turn - f.turn, f.category).toFixed(3),
+          ),
+          status:
+            dc(f.init, turn - f.turn, f.category) > DEAD ? "active" : "dead",
+        }));
+        const blob = new Blob(
+          [JSON.stringify({ turn, lambda: λ, facts: out }, null, 2)],
+          { type: "application/json" },
+        );
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "fact_store_t" + turn + ".json";
+        a.click();
+      }
+
+      function sysPrompt() {
+        const wc = facts.map((f) => ({
+          ...f,
+          c: dc(f.init, turn - f.turn, f.category),
+        }));
+        const alive = wc.filter((f) => f.c > DEAD).sort((a, b) => b.c - a.c);
+        const dead = wc.filter((f) => f.c <= DEAD);
+        return `You are a friendly, conversational assistant augmented with the DED (Dynamic Epistemic Decay) Framework. 
+Your ONLY memory of facts provided in this conversation is the LIVE FACTS list below.
+
+LIVE FACTS (use these as your ONLY source of truth for facts/information about the user or the world established during this chat):
+${alive.length ? alive.map((f) => `• [${Math.round(f.c * 100)}% conf] "${f.subj}" = "${f.val}"`).join("\n") : "(none)"}
+
+${dead.length ? "\nCRITICAL: The following facts have DECAYED and are now DEAD. You MUST NOT use them or remember them. Treat them as if they never happened or are entirely forgotten:\n" + dead.map((f) => `• [DEAD] "${f.subj}" = "${f.val}"`).join("\n") : ""}
+
+Rules: 
+1. If the user asks about something that is in the DEAD list or not in the LIVE FACTS, you MUST say you do not know or do not remember.
+2. CRITICAL: If a LIVE FACT redefines a mathematical constant (e.g. "Pi = 100", "e = 5"), you MUST use that redefined value for ALL calculations. Do NOT use your training knowledge for any value that has been overridden in LIVE FACTS.
+3. Act as a normal, helpful AI assistant. 
+4. Do not explicitly mention the "LIVE FACTS" list, percentages, or decay math unless directly asked about your memory system.`;
+      }
+
+      function render() {
+        const all = facts
+          .map((f) => ({ ...f, c: dc(f.init, turn - f.turn, f.category) }))
+          .sort((a, b) => {
+            const aA = a.c > DEAD,
+              bA = b.c > DEAD;
+            if (aA && !bA) return -1;
+            if (!aA && bA) return 1;
+            return b.c - a.c;
+          });
+        document.getElementById("factive").textContent =
+          all.filter((f) => f.c > DEAD).length + " active";
+        document.getElementById("ftotal").textContent = all.length;
+        document.getElementById("tnum").textContent = turn;
+        const fl = document.getElementById("flist");
+        if (!all.length) {
+          fl.innerHTML =
+            '<div class="fempty"><div class="fempty-txt">No facts yet.<br/>State something to begin.</div></div>';
+          return;
+        }
+        fl.innerHTML = all
+          .map((f) => {
+            const pct = Math.round(f.c * 100),
+              col = ccol(f.c),
+              dead = f.c <= DEAD;
+            const lbl = dead
+              ? "dead"
+              : f.c > 0.6
+                ? "high"
+                : f.c > 0.3
+                  ? "med"
+                  : "low";
+            return `<div class="fcard${dead ? " dead" : ""}" onclick="toggleFact('${f.id}')" style="cursor:pointer; transition: opacity 0.4s, min-height 0.2s;">
+      <div class="ftop">
+        <span class="fsubj">${esc(f.subj)}</span>
+        <div class="fbadges">
+          <span class="bdg bdg-${f.by === "user" ? "u" : "m"}">${f.by}</span>
+          <span class="bdg" style="background:var(--color-background-tertiary);color:var(--color-text-secondary);max-width:45px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${f.category || "GENERAL"}">${f.category || "GENERAL"}</span>
+          <span style="font-size:10px;font-family:var(--font-mono);color:${col};font-weight:500">${lbl}</span>
+          <button class="delbtn" onclick="event.stopPropagation(); deleteFact('${f.id}')" title="delete">×</button>
+        </div>
+      </div>
+      <div class="fval">= ${esc(f.val)}</div>
+      <div class="cbar"><div class="cfill" style="width:${pct}%;background:${col}"></div></div>
+      <div class="ffoot">
+        <span class="fturn">T${f.turn}→T${turn}</span>
+        <span class="fpct" style="color:${col}">${pct}%</span>
+      </div>
+      ${
+        expanded.has(f.id)
+          ? `
+      <div style="font-size:10px; color:var(--color-text-tertiary); margin-top:6px; border-top:1px dashed var(--color-border-tertiary); padding-top:4px; font-family:var(--font-mono); line-height: 1.4;">
+        <div><strong>Status:</strong> ${dead ? "Dead" : "Active"}</div>
+        <div><strong>Category:</strong> ${esc(f.category || "GENERAL")}</div>
+        <div><strong>Decay Rate (λ):</strong> ${CATEGORY_RATES[f.category] !== undefined ? CATEGORY_RATES[f.category] : λ}</div>
+        <div><strong>Initial Conf:</strong> ${f.init}</div>
+        <div><strong>Current Conf:</strong> ${f.c.toFixed(3)}</div>
+        <div><strong>Turn Found:</strong> ${f.turn}</div>
+      </div>
+      `
+          : ""
+      }
+    </div>`;
+          })
+          .join("");
+      }
+
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      // Change this line in your fetch calls:
+
+      const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+
+      function showRateLimit(msg) {
+        const b = document.getElementById("rl_banner");
+        b.textContent = msg;
+        b.classList.add("active");
+      }
+
+      function hideRateLimit() {
+        const b = document.getElementById("rl_banner");
+        b.classList.remove("active");
+      }
+
+      async function fetchWithRetry(url, options, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+          const res = await fetch(url, options);
+          if (res.status === 429 || res.status === 503) {
+            const retryAfter = (i + 1) * 2000 + Math.random() * 1000;
+            const msg = `API 429 (Rate Limit / Spike) - Retrying in ${(retryAfter / 1000).toFixed(1)}s... [Attempt ${i + 1}/${retries}]`;
+            console.log(msg);
+            showRateLimit(msg);
+            await wait(retryAfter);
+            hideRateLimit();
+            continue;
+          }
+          return res;
+        }
+        return await fetch(url, options); // Final fallback attempt
+      }
+
+      function getUrl() {
+        return `https://api.groq.com/openai/v1/chat/completions`;
+      }
+
+      async function extractWithLLM(text, apiKey) {
+        try {
+          const res = await fetchWithRetry(getUrl(), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: "meta-llama/llama-4-scout-17b-16e-instruct",
+              messages: [
+                {
+                  role: "system",
+                  content: `Extract declarative state-based facts. Output strictly a JSON object: {"facts": [{"subj", "val", "category"}]}.\n\nCRITICAL CLASSIFICATION RULES:\n1. If the fact involves math (Pi, constants), use: MATHEMATICAL_TRUTH.\n2. If it involves physics/nature (Gravity, Light), use: PHYSICAL_LAW.\n3. If it involves high-level roles/CEOs, use: INSTITUTIONAL_LEADERSHIP.\n4. If it is personal (names, personal budgets), use: GENERAL.\n5. If the message starts with "Breaking news", "Just announced", "Live:", treat the entire headline as a fact: subj = the topic, val = the event, category = BREAKING_NEWS. Example: "Breaking news, quantum computers go commercial" → {"subj": "quantum computers", "val": "go commercial", "category": "BREAKING_NEWS"}\n\nReturn {"facts": []} for questions or if no facts exist.\n\nIMPORTANT: Extract ONLY facts explicitly stated in the message. 
+Do NOT infer, calculate, or supply facts from your own knowledge.`,
+                },
+                { role: "user", content: text },
+              ],
+              temperature: 0.1,
+              response_format: { type: "json_object" },
+            }),
+          });
+          const data = await res.json();
+          let content = data.choices[0].message.content.trim();
+          return JSON.parse(content).facts || [];
+        } catch (e) {
+          console.error("Extraction failed, falling back to regex", e);
+          return null;
+        }
+      }
+
+      function addMsg(role, content) {
+        const c = document.getElementById("msgs");
+        const d = document.createElement("div");
+        d.className = "msg " + (role === "user" ? "u" : "a");
+        d.innerHTML = `<div class="mlabel">${role === "user" ? "You" : "DED Agent"}</div><div class="bubble">${esc(content).replace(/\n/g, "<br>")}</div>`;
+        c.appendChild(d);
+        c.scrollTop = c.scrollHeight;
+      }
+
+      function showTyping() {
+        const c = document.getElementById("msgs");
+        const d = document.createElement("div");
+        d.id = "tdot";
+        d.className = "msg a";
+        d.innerHTML =
+          '<div class="mlabel">DED Agent</div><div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>';
+        c.appendChild(d);
+        c.scrollTop = c.scrollHeight;
+      }
+      function rmTyping() {
+        const t = document.getElementById("tdot");
+        if (t) t.remove();
+      }
+
+      async function go() {
+        const inp = document.getElementById("cinp");
+        const txt = inp.value.trim();
+        const apiKey = document.getElementById("gemini_key").value.trim();
+        if (!txt || loading) return;
+        inp.value = "";
+        loading = true;
+        document.getElementById("sbtn").disabled = true;
+
+        turn++;
+
+        addMsg("user", txt);
+        showTyping();
+        document.getElementById("factive").textContent = "extracting...";
+
+        // 1. Get LLM-powered facts first
+        let newFacts = [];
+        const isQuestion =
+          txt.trim().endsWith("?") ||
+          /^(what|who|where|when|why|how|is|are|do|does|can|could|will|would|calculate|compute|find|tell|explain|describe|show)\b/i.test(
+            txt.trim(),
+          );
+        const cleanTxt = txt.replace(/[.!?]+$/, "").trim(); // Normalize input
+
+        if (!isQuestion) {
+          if (apiKey) {
+            const llmFacts = await extractWithLLM(cleanTxt, apiKey);
+            if (llmFacts && Array.isArray(llmFacts)) {
+              newFacts = llmFacts
+                .map((f) => ({
+                  id: Math.random().toString(36).substr(2, 8),
+                  subj: String(f.subj)
+                    .replace(
+                      /^(?:the latest\s+)?(?:breaking news|just announced|live)[\s,:]*/i,
+                      "",
+                    )
+                    .replace(/[.!?]+$/, "")
+                    .trim(),
+                  val: String(f.val)
+                    .replace(/[.!?]+$/, "")
+                    .trim(),
+                  category: String(f.category || "GENERAL"),
+                  by: "user",
+                  init: 1.0,
+                  turn: turn,
+                }))
+                .filter(
+                  (f) =>
+                    !/^(what|who|where|when|why|how|is|are|do|does|can|could|will|would)\b/i.test(
+                      f.subj,
+                    ),
+                ); // Drop interrogatives
+            }
+          }
+
+          // 2. Fallback to your regex if LLM fails or no key
+          if (newFacts.length === 0) {
+            newFacts = extract(cleanTxt, "user", turn);
+          }
+        }
+
+        // 3. Update the fact store
+        const MATH_CONSTANTS =
+          /^(pi|e|phi|euler|planck|avogadro|boltzmann|c)\b/i;
+        const PHYSICAL_CONSTANTS =
+          /^(gravity|gravitational|speed of light|thermodynamics|relativity)\b/i;
+        const HISTORIC_KEYWORDS =
+          /^(world war|treaty of|discovery of|invention of|constitution|declaration of independence|war of)\b/i;
+        const GEO_KEYWORDS =
+          /^(capital of|mount |river |ocean|continent|population of|distance to)\b/i;
+        const LEADERSHIP_KEYWORDS =
+          /^(ceo|cto|cfo|president|director|founder|head of)\b/i;
+        const POLITICAL_KEYWORDS =
+          /^(mayor|governor|senator|prime minister|policy on|law on)\b/i;
+        const EVENT_KEYWORDS =
+          /^(today|yesterday|score|match|game|stock market|price of)\b/i;
+        const NEWS_KEYWORDS =
+          /^(breaking|just announced|live|flash|emergency)\b/i;
+
+        newFacts = newFacts.map((f) => {
+          const s = f.subj.trim();
+          if (MATH_CONSTANTS.test(s) || MATH_CONSTANTS.test(cleanTxt))
+            return { ...f, category: "MATHEMATICAL_TRUTH" };
+          if (PHYSICAL_CONSTANTS.test(s) || PHYSICAL_CONSTANTS.test(cleanTxt))
+            return { ...f, category: "PHYSICAL_LAW" };
+          if (HISTORIC_KEYWORDS.test(s) || HISTORIC_KEYWORDS.test(cleanTxt))
+            return { ...f, category: "HISTORICAL_SEAL" };
+          if (GEO_KEYWORDS.test(s) || GEO_KEYWORDS.test(cleanTxt))
+            return { ...f, category: "GEOGRAPHIC_FACT" };
+          if (LEADERSHIP_KEYWORDS.test(s) || LEADERSHIP_KEYWORDS.test(cleanTxt))
+            return { ...f, category: "INSTITUTIONAL_LEADERSHIP" };
+          if (POLITICAL_KEYWORDS.test(s) || POLITICAL_KEYWORDS.test(cleanTxt))
+            return { ...f, category: "POLITICAL_POSITION" };
+          if (EVENT_KEYWORDS.test(s) || EVENT_KEYWORDS.test(cleanTxt))
+            return { ...f, category: "CURRENT_EVENT" };
+          if (NEWS_KEYWORDS.test(s) || NEWS_KEYWORDS.test(cleanTxt))
+            return { ...f, category: "BREAKING_NEWS" };
+          return f;
+        });
+
+        for (const nf of newFacts) {
+          facts.forEach((f) => {
+            // if (f.subj.toLowerCase() === nf.subj.toLowerCase()) {
+            //   f.init = 0; // instantly kill superseded fact
+            // }
+          });
+          facts.push(nf);
+        }
+
+        // Crucial Context Management: Limit raw message history based on context window size
+        // The LLM must rely on the DED facts, not a massive scrollback history
+        hist.push({ role: "user", parts: [{ text: txt }] });
+        if (hist.length > contextWindowSize)
+          hist = hist.slice(hist.length - contextWindowSize);
+
+        render();
+        try {
+          if (!apiKey) {
+            // Fallback to visual demo if no key provided
+            await new Promise((r) => setTimeout(r, 600));
+            let reply =
+              "I've noted that. Enter a Groq API key at the top to talk to a real LLM.";
+            if (txt.includes("="))
+              reply =
+                "Got it. Fact recorded and tracked in memory.\n\n(Provide a Groq API key above to connect the real model).";
+
+            hist.push({ role: "model", parts: [{ text: reply }] });
+
+            // Model fact extraction disabled to keep store clean
+
+            rmTyping();
+            addMsg("assistant", reply);
+          } else {
+            // Live API integration
+            const groqHist = hist.map((h) => ({
+              role: h.role === "model" ? "assistant" : h.role,
+              content: h.parts[0].text,
+            }));
+
+            const res = await fetchWithRetry(getUrl(), {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model: "llama-3.1-8b-instant",
+                messages: [
+                  { role: "system", content: sysPrompt() },
+                  ...groqHist,
+                ],
+              }),
+            });
+            if (!res.ok)
+              throw new Error(`API ${res.status}: ${await res.text()}`);
+            const data = await res.json();
+            const reply =
+              data.choices?.[0]?.message?.content || "(no response)";
+
+            hist.push({ role: "model", parts: [{ text: reply }] });
+
+            // Model fact extraction disabled to keep store clean
+
+            rmTyping();
+            addMsg("assistant", reply);
+          }
+        } catch (e) {
+          rmTyping();
+          addMsg(
+            "assistant",
+            `<span style="color:#E24B4A;font-weight:500;">Connection Error:</span> ${e.message}`,
+          );
+        }
+        render();
+        loading = false;
+        document.getElementById("sbtn").disabled = false;
+        inp.focus();
+      }
+
+      document.getElementById("cinp").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          go();
+        }
+      });
+      render();
+    </script>
+  </body>
+</html>
