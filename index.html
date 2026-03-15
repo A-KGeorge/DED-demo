@@ -1125,11 +1125,11 @@ Do NOT infer, calculate, or supply facts from your own knowledge.`,
           const normalizedSubj = normalizeFactText(nf.subj);
           const normalizedVal = normalizeFactText(nf.val);
 
-          facts.forEach((f) => {
-            if (normalizeFactText(f.subj) === normalizedSubj) {
-              f.init = 0; // instantly kill superseded fact
-            }
-          });
+          // facts.forEach((f) => {
+          //   if (normalizeFactText(f.subj) === normalizedSubj) {
+          //     f.init = 0; // instantly kill superseded fact
+          //   }
+          // });
 
           const hasExactMatch = facts.some(
             (f) =>
