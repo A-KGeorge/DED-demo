@@ -71,4 +71,4 @@ CRITICAL: The following facts have DECAYED and are now DEAD...
 ## 📝 Citation
 
 Based on the mechanism designs from:
-**George, A. K. (2026).** _Dynamic Epistemic Decay: A Multi-Dimensional Framework for Knowledge Currency in Retrieval-Augmented Generation._
+**George, A. K. (2026).** _Dynamic Epistemic Decay: A Multi-Dimensional Framework for Knowledge Currency in Retrieval-Augmented Generation._ doi: 10.5281/zenodo.19027156

@@ -542,7 +542,12 @@
               Hello — I track facts with exponential decay (λ=0.2 by default).
               Try stating <code>x = 5</code> or <code>my name is John</code>.
               Use the λ slider to adjust decay speed. Delete facts manually with
-              ×. Export the fact store as JSON with the export button.
+              ×. Export the fact store as JSON with the export button. The cw
+              slider controls the context window (history), which determines how
+              many recent turns the LLM can read. The models used here are
+              <code>llama-3.1-8b-instant</code> for conversation and
+              <code>meta-llama/llama-4-scout-17b-16e-instruct</code> for fact
+              extraction.
             </div>
           </div>
         </div>
