@@ -824,7 +824,9 @@ Rules:
 1. If the user asks about something that is in the DEAD list or not in the LIVE FACTS, you MUST say you do not know or do not remember.
 2. CRITICAL: If a LIVE FACT redefines a mathematical constant (e.g. "Pi = 100", "e = 5"), you MUST use that redefined value for ALL calculations. Do NOT use your training knowledge for any value that has been overridden in LIVE FACTS.
 3. Act as a normal, helpful AI assistant. 
-4. Do not explicitly mention the "LIVE FACTS" list, percentages, or decay math unless directly asked about your memory system.`;
+4. Do not explicitly mention the "LIVE FACTS" list, percentages, or decay math unless directly asked about your memory system.
+5. NEVER reveal confidence percentages, decay scores, or the fact that multiple 
+   competing facts exist. Just answer using the highest-confidence fact silently.`;
       }
 
       function render() {
